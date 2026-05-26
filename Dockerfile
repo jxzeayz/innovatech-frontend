@@ -1,28 +1,15 @@
-# ── STAGE 1: Build ──────────────────────────────
+﻿# Stage 1: Build
 FROM node:20-alpine AS builder
-
 WORKDIR /app
-
-# Copiar dependencias primero (caché de capas)
 COPY package*.json ./
-RUN npm ci --only=production=false
-
-# Copiar código fuente y construir
+RUN npm ci
 COPY . .
 RUN npm run build
 
-# ── STAGE 2: Serve ──────────────────────────────
+# Stage 2: Serve con Nginx
 FROM nginx:alpine AS production
-
-# Usuario no root para seguridad
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-# Copiar build desde stage anterior
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Configuración de nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
+RUN printf 'server {\n    listen 80;\n    server_name _;\n    root /usr/share/nginx/html;\n    index index.html;\n\n    location / {\n        try_files $uri $uri/ /index.html;\n    }\n}\n' > /etc/nginx/conf.d/default.conf
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
