@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: innovatech-frontend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://${BACKEND_IP}:8081
+    restart: unless-stopped
+    networks:
+      - innovatech-net
+
+networks:
+  innovatech-net:
+    driver: bridge
